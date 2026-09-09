@@ -233,10 +233,7 @@ ControlAllocationPseudoInverse::dropDependentAxes(matrix::Matrix<float, NUM_AXES
 		const float independence = row.norm_squared();
 
 		if (independence < kMinAxisIndependence) {
-			for (int j = 0; j < NUM_ACTUATORS; j++) {
-				effectiveness(axis, j) = 0.f;
-			}
-
+			effectiveness.row(axis) = 0.f;
 			dropped |= static_cast<uint8_t>(1u << axis);
 
 		} else {
