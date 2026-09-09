@@ -32,14 +32,31 @@ on:
         required: false
         type: boolean
         default: false
+      ros2:
+        description: 'Build the standalone ROS 2 development image instead'
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  ros2:
+    if: inputs.ros2
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/ros_dev_container.yml
+    with:
+      tag: ${{ inputs.px4_version }}
+      build_ref: ${{ inputs.build_ref }}
+      deploy_to_registry: ${{ inputs.deploy_to_registry }}
+    secrets: inherit
+
   setup:
     name: Set Tags and Variables
+    if: ${{ !inputs.ros2 }}
     permissions:
       contents: read
     runs-on: [runs-on,"runner=1cpu-linux-x64","image=ubuntu24-full-x64","run-id=${{ github.run_id }}",extras=s3-cache,spot=false]
