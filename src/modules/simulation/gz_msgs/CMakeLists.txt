@@ -24,9 +24,17 @@ if (Protobuf_FOUND)
             ${Protobuf_INCLUDE_DIRS}
     )
     target_link_libraries(px4_gz_msgs PUBLIC ${PROTOBUF_LIBRARIES})
+
+    # protobuf >= 22 requires C++17; PUBLIC so linking targets inherit it
+    target_compile_features(px4_gz_msgs PUBLIC cxx_std_17)
     if (Protobuf_VERSION VERSION_LESS "3.8")
         target_compile_options(px4_gz_msgs PRIVATE -Wno-error=float-equal)
     endif()
+
+    # Generated protobuf sources pull in protobuf/abseil headers that trip PX4's
+    # -Werror set (e.g. -Wdouble-promotion in absl/strings/str_cat.h). None of
+    # this is PX4 code, so don't hold it to PX4's warning policy.
+    target_compile_options(px4_gz_msgs PRIVATE -Wno-error)
 
     # Export the binary dir for other modules
     set(PX4_GZ_MSGS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
