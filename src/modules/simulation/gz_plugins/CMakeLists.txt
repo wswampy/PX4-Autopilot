@@ -69,8 +69,16 @@ if (gz-transport_FOUND)
     file(MAKE_DIRECTORY ${PX4_GZ_PLUGIN_OUTPUT_DIR})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PX4_GZ_PLUGIN_OUTPUT_DIR})
 
-    # Add our plugins as subdirectories
-    add_subdirectory(optical_flow)
+    # Add our plugins as subdirectories.
+    # OpenCV 5 removed the legacy C API (opencv2/core/types_c.h) that the
+    # PX4-OpticalFlow submodule still includes, so skip the plugin rather than
+    # fail the whole build. It is not needed by the standard SITL airframes.
+    find_package(OpenCV QUIET COMPONENTS core imgproc)
+    if (OpenCV_FOUND AND OpenCV_VERSION_MAJOR LESS 5)
+        add_subdirectory(optical_flow)
+    else()
+        message(STATUS "gz_plugins: optical_flow disabled (needs OpenCV < 5, found '${OpenCV_VERSION}')")
+    endif()
     add_subdirectory(template_plugin)
     add_subdirectory(gstreamer)
     add_subdirectory(moving_platform_controller)
@@ -80,10 +88,21 @@ if (gz-transport_FOUND)
     add_subdirectory(motor_failure)
     add_subdirectory(airspeed)
 
-    # Add an alias target for each plugin
-    if (TARGET GstCameraSystem)
-        add_custom_target(px4_gz_plugins ALL DEPENDS OpticalFlowSystem MovingPlatformController TemplatePlugin GenericMotorModelPlugin BuoyancySystemPlugin GstCameraSystem SpacecraftThrusterModelPlugin MotorFailurePlugin AirSpeedPlugin)
-    else()
-        add_custom_target(px4_gz_plugins ALL DEPENDS OpticalFlowSystem MovingPlatformController TemplatePlugin GenericMotorModelPlugin BuoyancySystemPlugin SpacecraftThrusterModelPlugin MotorFailurePlugin AirSpeedPlugin)
+    # Alias target covering whichever plugins actually got enabled
+    set(px4_gz_plugin_targets
+        MovingPlatformController
+        TemplatePlugin
+        GenericMotorModelPlugin
+        BuoyancySystemPlugin
+        SpacecraftThrusterModelPlugin
+        MotorFailurePlugin
+        AirSpeedPlugin
+    )
+    if (TARGET OpticalFlowSystem)
+        list(APPEND px4_gz_plugin_targets OpticalFlowSystem)
     endif()
+    if (TARGET GstCameraSystem)
+        list(APPEND px4_gz_plugin_targets GstCameraSystem)
+    endif()
+    add_custom_target(px4_gz_plugins ALL DEPENDS ${px4_gz_plugin_targets})
 endif()
