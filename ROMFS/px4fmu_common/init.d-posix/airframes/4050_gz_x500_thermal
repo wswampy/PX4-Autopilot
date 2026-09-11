@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# @name Gazebo x500 thermal
+#
+# @type Quadrotor
+#
+# x500 with a downward radiometric thermal camera (FLIR Lepton 3.5 class)
+# for the bushfire recon prototype.
+#
+
+PX4_SIM_MODEL=${PX4_SIM_MODEL:=x500_thermal}
+
+. ${R}etc/init.d-posix/airframes/4001_gz_x500
+
+# Hard ceiling for the prototype: 100 m above home. Note this is measured from
+# home, not from the ground below -- identical on flat test ground, different
+# over hills.
+param set-default GF_MAX_VER_DIST 100
